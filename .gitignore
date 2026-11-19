@@ -1,0 +1,41 @@
+# ---- python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.venv*/
+build/
+dist/
+
+# ---- project local caches (offline-friendly uv cache lives here) ----
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# ---- generated data & artifacts (regenerable, never committed) ----
+data/generated/
+data/warehouse/
+reports/
+*.duckdb
+*.duckdb.wal
+
+# ---- secrets ----
+.env
+.env.local
+
+# ---- personal / job-search material, never publish ----
+_notes/
+
+# ---- stray pytest cache dirs (created when .pytest_cache is unavailable) ----
+pytest-cache-files-*/
+
+# ---- os / editor ----
+Thumbs.db
+desktop.ini
+.DS_Store
+.idea/
+*.swp
