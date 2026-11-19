@@ -149,7 +149,36 @@ VS Code：解释器选 `D:\实习项目demo\.venv\Scripts\python.exe`。
 
 ---
 
-## 九、回滚方式
+## 九、GitHub 仓库与推送
+
+| 项 | 值 |
+| --- | --- |
+| 仓库 | https://github.com/aazz2233/sku-health-cockpit （public） |
+| 账号 | `aazz2233`，凭据存在 Windows 凭据管理器（gh keyring） |
+| 工具 | `gh` 2.105.0 便携版：`D:\tools\gh\bin\gh.exe` |
+| 权限 | token scopes: `repo` `read:org` `gist` `workflow` |
+
+**关键：这台机器访问 github.com 会被重置，必须走本机代理 `127.0.0.1:7890`。**
+
+```powershell
+# 推送前设置（当前会话有效）
+$env:HTTPS_PROXY = 'http://127.0.0.1:7890'
+$env:HTTP_PROXY  = 'http://127.0.0.1:7890'
+
+# 或者只给这个仓库配死
+git config http.proxy http://127.0.0.1:7890
+```
+
+`api.github.com` 是通的，被墙的是 `github.com` 主站，所以 gh 的 OAuth 登录也必须挂代理。
+
+排错记录：
+- `winget` 在此环境不可用（App Installer 被拦），所以 gh 用便携版 zip
+- 首次推送被拒：token 缺 `workflow` 权限，无法创建 `.github/workflows/ci.yml`；用 `gh auth refresh -h github.com -s workflow` 补
+- CI 第一步红在 `ruff format --check`：本地改了代码没重新格式化
+
+---
+
+## 十、回滚方式
 
 - 删 Git：删 `D:\tools\PortableGit`，并从用户 PATH 移除 `D:\tools\PortableGit\cmd`
 - 删 Python 与依赖：删 `.venv`、`.cache\python`、`.cache\uv`
