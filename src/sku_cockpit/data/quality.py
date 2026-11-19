@@ -36,7 +36,9 @@ def staging_counts(engine: Engine) -> dict[str, int]:
     with engine.connect() as conn:
         for name, table in STAGING_TABLES.items():
             counts[name] = int(conn.execute(select(func.count()).select_from(table)).scalar_one())
-        counts["raw_row"] = int(conn.execute(select(func.count()).select_from(raw_row)).scalar_one())
+        counts["raw_row"] = int(
+            conn.execute(select(func.count()).select_from(raw_row)).scalar_one()
+        )
         counts["reject_row"] = int(
             conn.execute(select(func.count()).select_from(reject_row)).scalar_one()
         )
@@ -144,7 +146,9 @@ def write_report(
         lines.append("| 文件 | 期望拒绝 | 命中 | 召回率 |")
         lines.append("| --- | ---: | ---: | ---: |")
         for item in dirty:
-            lines.append(f"| `{item.file}` | {item.expected} | {item.matched} | {item.recall:.0%} |")
+            lines.append(
+                f"| `{item.file}` | {item.expected} | {item.matched} | {item.recall:.0%} |"
+            )
         missed_rows: list[tuple[str, dict[str, object]]] = [
             (match.file, row) for match in dirty for row in match.missed
         ]

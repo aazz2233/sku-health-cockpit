@@ -595,7 +595,9 @@ class Generator:
                                     "campaign_id": f"CMP-{shop.shop_id}-{sku[-3:]}",
                                     "campaign_type": "SP",
                                     "date_local": d,
-                                    "impressions": int(max(100, units * int(rng.integers(120, 260)))),
+                                    "impressions": int(
+                                        max(100, units * int(rng.integers(120, 260)))
+                                    ),
                                     "clicks": int(max(1, units * int(rng.integers(6, 18)))),
                                     "spend_local": spend,
                                     "attributed_sales_local": amount,

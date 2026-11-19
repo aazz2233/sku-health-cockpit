@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from pathlib import Path
 
@@ -75,4 +75,3 @@ def test_all_shipped_mappings_load() -> None:
         assert set(specs) == {"orders", "refunds", "ads", "settlement", "inventory"}
         for spec in specs.values():
             assert spec.file.startswith(shop)
-

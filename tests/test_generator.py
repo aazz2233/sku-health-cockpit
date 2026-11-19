@@ -57,4 +57,3 @@ def test_every_anomaly_is_labelled_for_every_shop(workdir: Path) -> None:
     per_type = labels.groupby(["sku_id", "anomaly_type"]).size()
     assert (per_type == len(SHOPS)).all()
     assert len(labels) % len(SHOPS) == 0
-
