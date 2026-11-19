@@ -15,8 +15,8 @@
 | 依赖 | ✅ 已锁 | `uv.lock` · 118 个包 | pandas 3.1.1 / duckdb 2.0.0 / pydantic 2.14.3 / streamlit 1.67.0 / pymysql 1.2.4 |
 | uv | ✅ 已有 | 0.11.28 | 依赖与 Python 版本管理 |
 | VS Code | ✅ 已有 | `F:\Microsoft VS Code\` | 把解释器选成 `.venv\Scripts\python.exe` |
-| MySQL | ⚠️ 服务可用 | 8.0.46 · 服务 `MySQL80` · `127.0.0.1:3306` | **凭据未拿到**：用 `root` + `password` 被拒（ERROR 1045），需要正确密码或重置 |
-| Docker | ❌ 未装 | — | 本机没有 WSL2；账户是管理员，提权后可装（步骤见第五节） |
+| MySQL | ✅ 可用 | 8.0.46 · 服务 `MySQL80` · `127.0.0.1:3306` | root 密码已重置；应用账号 `cockpit` 仅有 `sku_cockpit` 库权限；连接串在 `.env` |
+| Docker | ⏸ 不装 | — | 已决定不装：改为脚本化交付（第五节），Dockerfile 仅作可选附料 |
 | Node.js | ✅ 已有 | `D:\node.js\node.exe` | 本项目用不到，备用 |
 | PowerShell | ⚠️ 5.1 | 系统自带 | 没有 pwsh 7；脚本必须兼容 5.1，且**必须存为 UTF-8 with BOM**，否则中文注释会让解析器报错 |
 
@@ -98,29 +98,36 @@ VS Code：解释器选 `D:\实习项目demo\.venv\Scripts\python.exe`。
 
 ---
 
-## 五、Docker 怎么装（账户已有权限，只差提权）
+## 五、交付方式：不依赖 Docker 的"一键跑起来"
 
-当前进程 `IsInRole(Administrator)` 为 False，但账户在 `Administrators` 组、UAC 开启 —— 所以**不需要"申请权限"**，只需要用管理员身份运行一次。
+本机不装 Docker（无 WSL2，且两次重启会打断开发）。替代方案按优先级：
 
-```powershell
-# 1) 管理员 PowerShell（开始菜单搜 PowerShell → 右键"以管理员身份运行"）
-wsl --install --no-distribution     # 装 WSL2，需重启
+| 层级 | 做法 | 效果 |
+| --- | --- | --- |
+| 1. 脚本化启动 | `scripts/up.ps1`：检查环境 → `uv sync` → 生成演示数据 → 建表入库 → 启动看板 | 一条命令，10 分钟内看到界面 |
+| 2. 固定依赖 | `uv.lock` + `.python-version` | 换机器重建环境可复现 |
+| 3. 跨平台证明 | GitHub Actions 在 Ubuntu 上跑 lint/type/test | 证明"不是只在我电脑上能跑" |
+| 4. Docker（可选附料） | `Dockerfile` + `compose.yaml` 写进仓库，README 标注 "not verified on this machine, provided as a reference" | 面试官若想容器化，有现成的，且不夸口 |
 
-# 2) 重启后，管理员 PowerShell
-wsl --update
-winget install -e --id Docker.DockerDesktop
-# 3) 再重启，启动 Docker Desktop，等托盘图标变绿
-docker run --rm hello-world
-```
+**为什么这么做**：面试官看的是"能不能跑起来 + 有没有交付意识"，不是"有没有用 Docker"。一条 `uv sync && uv run streamlit run ...` 的 README，比一个跑不通的 compose 文件更有说服力。诚实标注"未在本机验证"反而是加分项。
 
-注意：
-- 安装 WSL2 和 Docker Desktop **各需一次重启**，建议别在写代码的中间做
-- 虚拟化需在 BIOS 开启（`HypervisorPresent` 查询被系统拒绝，装 WSL 时报错会直接提示）
-- 装好前，P5 的容器化交付物先写好、不在本地验证
+如果之后想补 Docker：账户已在管理员组，`wsl --install --no-distribution` → 重启 → `winget install Docker.DockerDesktop` → 重启即可。
 
 ---
 
-## 六、版本注意点（写代码前先记住）
+## 六、MySQL 凭据与维护
+
+- 应用账号：`cockpit`（`localhost` 与 `127.0.0.1` 各一条），**仅对 `sku_cockpit` 库有权限**
+- 数据库：`sku_cockpit`，`utf8mb4` / `utf8mb4_0900_ai_ci`
+- 连接串写在 `.env`（已 gitignore）；完整凭据与重置过程记在 `_notes/mysql-credentials.txt`
+- root 密码已重置为强密码，仅用于维护，不进任何代码
+- 已验证：SQLAlchemy 连接、DDL 往返、字符集均为 utf8mb4
+
+**踩过的坑**（值得记住）：`mysqld --defaults-file="C:\ProgramData\MySQL\MySQL Server 8.0\my.ini"` 在 PowerShell 里用 `Start-Process -ArgumentList` 传参时，路径含空格必须显式加引号，否则被拆成两段，mysqld 报 `Failed to open required defaults file` 秒退；重置完还要记得把服务拉起来。
+
+---
+
+## 七、版本注意点（写代码前先记住）
 
 | 依赖 | 版本 | 注意 |
 | --- | --- | --- |
@@ -134,14 +141,15 @@ docker run --rm hello-world
 
 ---
 
-## 七、待决事项
+## 八、待决事项
 
-1. **MySQL 凭据**：`root`/`password` 被拒。需要：正确的 root 密码，或授权我用 `--skip-grant-tables` 重置（要短暂停服务、需要管理员），或改用其他已有账号
-2. **Docker 安装时机**：现在装（两次重启）还是等 P5 前
+1. **推到 GitHub**：仓库还只在本地；需要确认 GitHub 账号、仓库名与可见性，并用 `gh` 或 HTTPS 凭据推送（首次推送要联网授权）
+2. **pre-commit 钩子**：配置已就位，但 `pre-commit install` 要联网拉取 hook 仓库
+3. **LLM Key**：目前 `LLM_PROVIDER=mock`，AI 归因层先用回放模式做；有真 key 再切
 
 ---
 
-## 八、回滚方式
+## 九、回滚方式
 
 - 删 Git：删 `D:\tools\PortableGit`，并从用户 PATH 移除 `D:\tools\PortableGit\cmd`
 - 删 Python 与依赖：删 `.venv`、`.cache\python`、`.cache\uv`
