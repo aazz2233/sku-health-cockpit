@@ -25,8 +25,8 @@ def engine():  # type: ignore[no-untyped-def]
         eng = get_engine(get_settings())
         with eng.connect():
             pass
-    except OperationalError as exc:  # pragma: no cover - depends on environment
-        pytest.skip(f"MySQL not reachable: {exc}")
+    except (OperationalError, RuntimeError) as exc:  # pragma: no cover - depends on env
+        pytest.skip(f"MySQL not available: {exc}")
     return eng
 
 
