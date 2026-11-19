@@ -1,0 +1,72 @@
+shop_id: US01
+marketplace: US
+currency: USD
+
+datasets:
+  orders:
+    file: US01_orders.csv
+    header_row: 1
+    date_formats: ["%Y-%m-%d %H:%M:%S"]
+    columns:
+      order_item_id: ["Order Item ID", "订单行号"]
+      order_id: ["Order ID", "订单编号"]
+      order_time_local: ["Purchase Date", "下单时间"]
+      sku_id: ["Seller SKU", "商家SKU"]
+      qty: ["Quantity", "数量"]
+      unit_price_local: ["Item Price", "单价"]
+      currency: ["Currency", "币种"]
+      fulfillment: ["Fulfillment", "配送方式"]
+      status: ["Status", "状态"]
+
+  refunds:
+    file: US01_refunds.csv
+    header_row: 1
+    date_formats: ["%Y-%m-%d"]
+    columns:
+      refund_id: ["Refund ID"]
+      order_item_id: ["Order Item ID"]
+      sku_id: ["Seller SKU"]
+      qty: ["Quantity"]
+      amount_local: ["Refund Amount"]
+      currency: ["Currency"]
+      reason_code: ["Reason"]
+      refund_date_local: ["Refund Date"]
+
+  ads:
+    file: US01_ads.csv
+    header_row: 1
+    date_formats: ["%Y-%m-%d"]
+    columns:
+      campaign_id: ["Campaign ID"]
+      sku_id: ["Seller SKU"]
+      date_local: ["Date"]
+      impressions: ["Impressions"]
+      clicks: ["Clicks"]
+      spend_local: ["Spend"]
+      attributed_sales_local: ["Attributed Sales"]
+      currency: ["Currency"]
+
+  settlement:
+    file: US01_settlement.csv
+    header_row: 1
+    date_formats: ["%Y-%m-%d"]
+    columns:
+      settlement_id: ["Settlement ID"]
+      order_item_id: ["Order Item ID"]
+      date_local: ["Date"]
+      fee_type: ["Fee Type"]
+      amount_local: ["Amount"]
+      currency: ["Currency"]
+
+  inventory:
+    file: US01_inventory.xlsx
+    header_row: 1
+    date_formats: ["%Y-%m-%d"]
+    columns:
+      snapshot_id: ["Snapshot ID"]
+      sku_id: ["Seller SKU"]
+      warehouse: ["Warehouse"]
+      date_local: ["Date"]
+      available_qty: ["Available"]
+      inbound_qty: ["Inbound"]
+      reserved_qty: ["Reserved"]

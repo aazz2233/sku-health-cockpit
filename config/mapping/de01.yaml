@@ -1,0 +1,73 @@
+shop_id: DE01
+marketplace: DE
+currency: EUR
+
+datasets:
+  # 德国店导出的订单文件前面有两行说明，表头在第 3 行
+  orders:
+    file: DE01_orders.csv
+    header_row: 3
+    date_formats: ["%Y-%m-%d %H:%M:%S"]
+    columns:
+      order_item_id: ["Order Item ID", "订单行号"]
+      order_id: ["Order ID", "订单编号"]
+      order_time_local: ["Purchase Date", "下单时间", "Bestelldatum"]
+      sku_id: ["Seller SKU", "商家SKU"]
+      qty: ["Quantity", "数量", "Menge"]
+      unit_price_local: ["Item Price", "单价"]
+      currency: ["Currency", "币种"]
+      fulfillment: ["Fulfillment", "配送方式"]
+      status: ["Status", "状态"]
+
+  refunds:
+    file: DE01_refunds.csv
+    header_row: 1
+    date_formats: ["%Y-%m-%d"]
+    columns:
+      refund_id: ["Refund ID"]
+      order_item_id: ["Order Item ID"]
+      sku_id: ["Seller SKU"]
+      qty: ["Quantity"]
+      amount_local: ["Refund Amount"]
+      currency: ["Currency"]
+      reason_code: ["Reason"]
+      refund_date_local: ["Refund Date"]
+
+  ads:
+    file: DE01_ads.csv
+    header_row: 1
+    date_formats: ["%Y-%m-%d"]
+    columns:
+      campaign_id: ["Campaign ID"]
+      sku_id: ["Seller SKU"]
+      date_local: ["Date"]
+      impressions: ["Impressions"]
+      clicks: ["Clicks"]
+      spend_local: ["Spend"]
+      attributed_sales_local: ["Attributed Sales"]
+      currency: ["Currency"]
+
+  settlement:
+    file: DE01_settlement.csv
+    header_row: 1
+    date_formats: ["%Y-%m-%d"]
+    columns:
+      settlement_id: ["Settlement ID"]
+      order_item_id: ["Order Item ID"]
+      date_local: ["Date"]
+      fee_type: ["Fee Type"]
+      amount_local: ["Amount"]
+      currency: ["Currency"]
+
+  inventory:
+    file: DE01_inventory.xlsx
+    header_row: 1
+    date_formats: ["%Y-%m-%d"]
+    columns:
+      snapshot_id: ["Snapshot ID"]
+      sku_id: ["Seller SKU"]
+      warehouse: ["Warehouse"]
+      date_local: ["Date"]
+      available_qty: ["Available"]
+      inbound_qty: ["Inbound"]
+      reserved_qty: ["Reserved"]

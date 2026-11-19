@@ -55,7 +55,8 @@ src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "C4", "RUF"]
-ignore = ["E501"]
+# RUF001-003 flag fullwidth punctuation in Chinese text/comments/docstrings.
+ignore = ["E501", "RUF001", "RUF002", "RUF003"]
 
 [tool.mypy]
 python_version = "3.12"
@@ -68,9 +69,13 @@ check_untyped_defs = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+# NOTE: tmp_path is avoided in this suite: this Windows sandbox denies access to
+# directories created with mode 0o700 (what tempfile.mkdtemp uses). Use the
+# `workdir` fixture from tests/conftest.py instead.
 addopts = "-q --strict-markers"
 markers = [
     "slow: long-running integration checks",
+    "integration: needs a reachable MySQL instance (skipped otherwise)",
 ]
 
 [tool.coverage.run]

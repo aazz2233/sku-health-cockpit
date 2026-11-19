@@ -278,4 +278,33 @@ BIZ_BALANCE / BIZ_FK_MISSING / BIZ_TIME_ORDER / BIZ_CURRENCY / BIZ_QTY_EXCEED / 
 | 2 | 促销日历 | 只做 2 个促销窗口（Prime Day 类） | 加黑五/圣诞，更真实但更复杂 |
 | 3 | 汇率来源 | 生成器内置随机游走（离线可跑） | 用真实历史汇率（更可信，但要联网抓一次并存成 CSV） |
 
-确认后我按这个设计实现 P1：先 `schema` + 生成器，再映射与校验，最后入库与质量报告。
+---
+
+## 九、实现记录（2026-11-19）
+
+设计已落地，以下是与原设计的差异，都是实现过程中被数据"打脸"后改的：
+
+| 项 | 设计 | 实际 | 原因 |
+| --- | --- | --- | --- |
+| `raw_row` 覆盖范围 | 全部数据集全量 | 只存 **orders / refunds** 全量，其余只存被拒行 | 全量 33 万行 JSON 太重；用 `staging.source_run_id + source_row` 仍可回溯 |
+| D7 脏表头 | 产生 `MAPPING` 拒绝 | 被表头归一化**吸收**，不产生拒绝 | 空格/换行归一化后就合法了，判成拒绝是误伤。manifest 用 `expect: absorbed` 区分 |
+| 订单结构 | 一个订单可含多 SKU | 一行一单（15% 概率同订单多行未实现） | 先保证口径正确；B1「订单总额 = 订单行合计」因此尚未有真实校验对象 |
+| 异常窗口 | 写死第 40~70 天 | 按周期比例计算 | 测试用 `days=20` 生成时越界，暴露出硬编码 |
+| 汇率 | — | 修正了一个真 bug：把 `fx_rate`（本币→CNY）乘到美元定价上，导致 27 美元的锅卖 196 美元 | 本币定价应走 `usd_price × usd_cny / local_cny` |
+| 测试临时目录 | `tmp_path` | 用 `tests/conftest.py` 的 `workdir` | 本机沙箱拒绝访问 `mode=0o700` 的目录（`mkdtemp` 就是这么建的），`tmp_path` 全部在 setup 阶段失败 |
+
+实测结果：
+
+```
+orders       82,651      refunds      4,725
+ads          28,239      inventory   54,000
+settlement  165,330      raw_row     87,392
+reject_row       16      anomaly_label  81
+
+脏数据召回：US01 6/6、DE01 5/5、UK01 4/4（含原因码匹配）
+幂等：第二次运行 15 个文件全部 skip，行数不变
+```
+
+多出来的 1 行拒绝是**级联结果**：被拒的坏订单行，其退款单找不到订单行，于是一起被拒。这是正确行为，也说明拒绝不是孤立发生的。
+
+下一步（P2）把 `staging_*` 聚合成 `mart_sku_daily`，利润口径按 `docs/metrics.md` 落地。
