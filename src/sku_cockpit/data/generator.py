@@ -382,19 +382,19 @@ class Generator:
         ]
 
     def _apply_catalog_anomalies(self) -> None:
-        """A8: one variant priced far above its siblings."""
+        """A8: one variant priced far above its siblings, in every shop."""
         by_parent = self.skus.groupby("parent_asin")["sku_id"].apply(list)
         candidates = [(p, ids) for p, ids in by_parent.items() if len(ids) >= 3]
         if not candidates:
             return
         for _parent, ids in candidates[:2]:
             victim = sorted(ids)[0]
-            mask = (self.listings["sku_id"] == victim) & (
-                self.listings["shop_id"] == self.shops[0].shop_id
-            )
-            self.listings.loc[mask, "price_local"] = (
-                self.listings.loc[mask, "price_local"].astype(float) * 1.4
-            ).round(2)
+            # make the victim clearly the most expensive variant, so the rule
+            # (which flags the highest-priced child) points at exactly this SKU
+            group = self.listings[self.listings["sku_id"].isin(ids)]
+            max_price = float(group["price_local"].astype(float).max())
+            mask = self.listings["sku_id"] == victim
+            self.listings.loc[mask, "price_local"] = round(max_price * 1.4, 2)
             self.labels.extend(self._label(victim, 0, self.days - 1, "variant_price"))
 
     # -------------------------------------------------------------- simulate

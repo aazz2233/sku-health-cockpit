@@ -206,6 +206,22 @@ mart_shop_kpi = Table(
     Column("risk_sku_count", Integer, nullable=False, default=0),
 )
 
+# ------------------------------------------------------------------- anomaly
+anomaly_event = Table(
+    "anomaly_event",
+    metadata,
+    Column("event_id", BigInteger, primary_key=True, autoincrement=True),
+    Column("rule_id", String(8), nullable=False),
+    Column("sku_id", String(24), nullable=True),
+    Column("shop_id", String(10), nullable=True),
+    Column("date_local", Date, nullable=True),
+    Column("severity", String(4), nullable=False),
+    Column("evidence", JSON, nullable=False),
+    Column("detected_at", DateTime, nullable=False, server_default=func.now()),
+    Index("ix_anomaly_event_rule", "rule_id"),
+    Index("ix_anomaly_event_sku_date", "sku_id", "date_local"),
+)
+
 # ------------------------------------------------------------------ control
 ingest_run = Table(
     "ingest_run",

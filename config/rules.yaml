@@ -1,0 +1,54 @@
+# 异常规则阈值（P3）
+# 每条规则：信号 / 窗口 / 阈值 / 严重度
+# 改这里不需要改代码 —— 引擎只读这个文件。
+#
+# 设计原则：先看"业务量够不够"，再看"比率对不对"。
+# 分母只有 1 单时，退款率/利润率的波动没有统计意义，先滤掉再判断。
+
+negative_margin:
+  threshold: -0.04    # 净利率低于 -4%
+  min_days: 3         # 连续天数
+  min_revenue: 1000   # 7 日净收入下限（CNY），低于此值的比率不可信
+  drop_pp: 0.05       # 较自身前 28 日基线再降 5 个百分点，避免"一直都薄"的 SKU 误报
+  severity: P0
+
+gross_margin_drop:
+  drop_pp: 0.08       # 毛利率较 7 日均值下降 8 个百分点
+  severity: P0
+
+ad_spike:
+  min_spend: 200.0    # 7 日广告费下限（CNY），滤掉零散小单
+  ratio: 2.0          # 7 日广告费较 7 天前的 7 日总额翻倍
+  min_days: 2         # 连续触发天数，压掉单日波动
+  severity: P1
+
+sales_cliff:
+  ratio: 0.5          # 日销量低于 28 日均值的一半
+  min_days: 3
+  baseline_days: 28
+  min_baseline_units: 1   # 基线日均销量下限；太低时按周看也会是噪声
+  severity: P0
+
+refund_spike:
+  min_rate: 0.12      # 退款率绝对下限
+  ratio: 2.0          # 较类目基线翻倍（不能用自身历史：全周期异常会污染基线）
+  min_gmv_7d: 1000    # 7 日 GMV 下限（CNY），否则低量 SKU 退款率没有统计意义
+  severity: P1
+
+stockout:
+  severity: P0
+
+overstock:
+  jump: 500           # 单日可售库存激增 > 500 件（大额到货）
+  severity: P2
+
+variant_price:
+  spread: 0.30        # 同父体变体价差 > 30%
+  severity: P2
+
+duplicate_listing:
+  similarity: 0.90    # 标题相似度阈值
+  severity: P1
+
+data_quality:
+  severity: P1

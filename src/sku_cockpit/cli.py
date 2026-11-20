@@ -89,6 +89,24 @@ def _metrics(_: argparse.Namespace) -> None:
         print(f"  {name:20} {value:>10,}")
 
 
+def _detect(_: argparse.Namespace) -> None:
+    from sku_cockpit.anomaly import run as detect_run
+    from sku_cockpit.anomaly import write_eval_report
+
+    settings = get_settings()
+    engine = get_engine(settings)
+    init_schema(engine)
+    started = time.perf_counter()
+    _events, eval_df = detect_run(engine, settings)
+    elapsed = time.perf_counter() - started
+    n = eval_df.attrs.get("event_count", 0)
+    print(f"[detect] {n} events in {elapsed:.1f}s")
+    print(eval_df.to_string(index=False, float_format=lambda x: f"{x:.2f}"))
+    out = Path(settings.reports_dir) / "anomaly_eval.md"
+    write_eval_report(eval_df, out)
+    print(f"[detect] report: {out}")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="sku_cockpit", description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -110,6 +128,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     met = sub.add_parser("metrics", help="rebuild the mart layer from sql/ templates")
     met.set_defaults(func=_metrics)
+
+    det = sub.add_parser("detect", help="run anomaly rules and evaluate against labels")
+    det.set_defaults(func=_detect)
 
     return parser
 
