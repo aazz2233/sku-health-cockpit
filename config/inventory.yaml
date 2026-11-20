@@ -1,0 +1,25 @@
+# 库存补货参数（无真实交期数据，按类目配置）
+#
+# lead_time_days : 从下单到可售的天数（含生产 + 头程 + 入仓）
+# service_level  : 目标服务水平，用于安全库存的 z 值
+# overstock_days : 超过多少天可售判为超储
+
+default:
+  lead_time_days: 30
+  service_level: 0.95
+  overstock_days: 180
+
+categories:
+  home:        { lead_time_days: 30 }
+  electronics: { lead_time_days: 30 }
+  outdoor:     { lead_time_days: 45 }
+  baby:        { lead_time_days: 30 }
+  apparel:     { lead_time_days: 45 }
+  pet:         { lead_time_days: 30 }
+
+# z 值查表：只列常用的几个，避免引入 scipy
+z_scores:
+  0.90: 1.28
+  0.95: 1.65
+  0.98: 2.05
+  0.99: 2.33

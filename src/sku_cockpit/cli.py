@@ -75,6 +75,20 @@ def _report(_: argparse.Namespace) -> None:
     print(f"[report] {out}")
 
 
+def _metrics(_: argparse.Namespace) -> None:
+    from sku_cockpit.metrics import rebuild_marts
+
+    settings = get_settings()
+    engine = get_engine(settings)
+    init_schema(engine)
+    started = time.perf_counter()
+    counts = rebuild_marts(engine, settings)
+    elapsed = time.perf_counter() - started
+    print(f"[metrics] built in {elapsed:.1f}s")
+    for name, value in counts.items():
+        print(f"  {name:20} {value:>10,}")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="sku_cockpit", description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -93,6 +107,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     rep = sub.add_parser("report", help="write the data quality report")
     rep.set_defaults(func=_report)
+
+    met = sub.add_parser("metrics", help="rebuild the mart layer from sql/ templates")
+    met.set_defaults(func=_metrics)
 
     return parser
 

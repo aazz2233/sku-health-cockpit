@@ -164,6 +164,10 @@ class Generator:
             )
             sku_id = f"SKU-{i + 1:04d}"
             asin = f"{parent[:2]}{rng.integers(10**7, 10**8 - 1)}"
+            # unit volume for storage fees; deterministic jitter so the RNG
+            # stream (and therefore every other dataset) stays unchanged
+            jitter = 0.85 + 0.3 * ((i * 37) % 100) / 100.0
+            unit_cbm = round(cat.weight_kg / 200.0 * jitter, 6)
             rows.append(
                 {
                     "sku_id": sku_id,
@@ -174,6 +178,7 @@ class Generator:
                     "category": cat.code,
                     "product_type": product,
                     "unit_cost_cny": cost_cny,
+                    "unit_cbm": unit_cbm,
                     "launch_date": launch,
                     "lifecycle": lifecycle,
                     "_price_usd": price_usd,
@@ -219,19 +224,27 @@ class Generator:
         return skus, lst
 
     def _build_fee_schedule(self) -> pd.DataFrame:
+        """Platform fees are quoted in USD-equivalents, then converted to local.
+
+        Bug fixed here: multiplying a USD fee by the local->CNY rate produced
+        fees ~7x too high (a $3.20 FBA fee became "22.88 USD" for the US shop).
+        """
         rows = []
+        usd_fx = self.shops[0].fx_rate
         for shop in self.shops:
+            local_per_usd = usd_fx / shop.fx_rate
             for cat in CATEGORIES:
                 rows.append(
                     {
                         "category": cat.code,
                         "marketplace": shop.marketplace,
                         "referral_rate": cat.referral_rate,
-                        "referral_min": 0.30,
+                        "referral_min": round(0.30 * local_per_usd, 2),
                         "fba_size_tier": "standard" if cat.weight_kg < 1.0 else "large",
                         "fba_weight_tier": "lt_1kg" if cat.weight_kg <= 1.0 else "1_3kg",
-                        "fba_fee_local": round(cat.fba_fee_usd * shop.fx_rate, 2),
-                        "storage_rate_per_cbm_month": round(23.0 * shop.fx_rate / 10.0, 2),
+                        "fba_fee_local": round(cat.fba_fee_usd * local_per_usd, 2),
+                        # 23 USD per cubic metre per month, in local currency
+                        "storage_rate_per_cbm_month": round(23.0 * local_per_usd, 2),
                         "effective_from": self.start - timedelta(days=365),
                         "effective_to": None,
                     }
@@ -278,12 +291,14 @@ class Generator:
             for b in range(n_batches):
                 arrived = self.start + timedelta(days=int(self.rng.integers(-20, self.days)))
                 qty = int(self.rng.integers(60, 400))
+                # inbound freight: 0.5-1.6 USD per unit (3-11 CNY), a realistic
+                # share of a 20-60 USD product instead of a 25% margin killer
                 rows.append(
                     {
                         "shipment_id": f"SHP-{i + 1:04d}-{b + 1}",
                         "sku_id": sku,
                         "qty": qty,
-                        "freight_cny": round(qty * self.rng.uniform(1.2, 4.5) * 7.0, 2),
+                        "freight_cny": round(qty * self.rng.uniform(0.5, 1.6) * 7.15, 2),
                         "arrived_at": arrived,
                         "warehouse": WAREHOUSES[b % len(WAREHOUSES)],
                     }

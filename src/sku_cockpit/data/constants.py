@@ -39,12 +39,12 @@ SHOPS: tuple[Shop, ...] = (
 )
 
 CATEGORIES: tuple[Category, ...] = (
-    Category("home", "Home & Kitchen", 25.0, 0.42, 0.040, 0.15, 3.20, 0.9),
-    Category("electronics", "Electronics Accessories", 35.0, 0.30, 0.060, 0.15, 3.60, 0.4),
-    Category("outdoor", "Outdoor & Sports", 60.0, 0.35, 0.050, 0.15, 5.10, 1.8),
-    Category("baby", "Baby & Toddler", 18.0, 0.40, 0.030, 0.15, 2.80, 0.7),
-    Category("apparel", "Apparel", 22.0, 0.55, 0.120, 0.17, 3.40, 0.5),
-    Category("pet", "Pet Supplies", 15.0, 0.38, 0.040, 0.15, 2.60, 0.8),
+    Category("home", "Home & Kitchen", 25.0, 0.52, 0.040, 0.15, 3.20, 0.9),
+    Category("electronics", "Electronics Accessories", 35.0, 0.48, 0.060, 0.15, 3.60, 0.4),
+    Category("outdoor", "Outdoor & Sports", 60.0, 0.48, 0.050, 0.15, 5.10, 1.8),
+    Category("baby", "Baby & Toddler", 18.0, 0.50, 0.030, 0.15, 2.80, 0.7),
+    Category("apparel", "Apparel", 22.0, 0.60, 0.120, 0.17, 3.40, 0.5),
+    Category("pet", "Pet Supplies", 15.0, 0.50, 0.040, 0.15, 2.60, 0.8),
 )
 
 CATEGORY_BY_CODE = {c.code: c for c in CATEGORIES}

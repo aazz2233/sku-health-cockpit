@@ -32,6 +32,7 @@ from sku_cockpit.schema import (
     anomaly_label,
     dim_date,
     dim_fee_schedule,
+    dim_fx,
     dim_listing,
     dim_shipment,
     dim_shop,
@@ -135,6 +136,7 @@ class Ingestor:
         listings = pd.read_csv(self.generated_dir / "listings.csv", encoding="utf-8-sig")
         shipments = pd.read_csv(self.generated_dir / "shipments.csv", encoding="utf-8-sig")
         fees = pd.read_csv(self.generated_dir / "fee_schedule.csv", encoding="utf-8-sig")
+        fx = pd.read_csv(self.generated_dir / "fx_rates.csv", encoding="utf-8-sig")
         calendar = pd.read_csv(self.generated_dir / "dim_date.csv", encoding="utf-8-sig")
         labels = pd.read_csv(self.generated_dir / "anomaly_labels.csv", encoding="utf-8-sig")
 
@@ -145,6 +147,7 @@ class Ingestor:
             fees[col] = pd.to_datetime(fees[col], errors="coerce").dt.date
         calendar["date"] = pd.to_datetime(calendar["date"]).dt.date
         calendar["is_promo"] = calendar["is_promo"].astype(bool)
+        fx["date"] = pd.to_datetime(fx["date"]).dt.date
         labels["date_from"] = pd.to_datetime(labels["date_from"]).dt.date
         labels["date_to"] = pd.to_datetime(labels["date_to"]).dt.date
         labels["is_anomaly"] = labels["is_anomaly"].astype(bool)
@@ -159,6 +162,7 @@ class Ingestor:
                 fees.drop(columns=["fee_id"], errors="ignore"),
             ),
             "dim_date": (dim_date, calendar.rename(columns={"date": "date_key"})),
+            "dim_fx": (dim_fx, fx.rename(columns={"date": "date_key"})),
             "anomaly_label": (anomaly_label, labels),
         }
         with self.engine.begin() as conn:
