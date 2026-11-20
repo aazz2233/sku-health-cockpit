@@ -222,6 +222,42 @@ anomaly_event = Table(
     Index("ix_anomaly_event_sku_date", "sku_id", "date_local"),
 )
 
+# --------------------------------------------------------------- diagnosis
+diagnosis = Table(
+    "diagnosis",
+    metadata,
+    Column("diagnosis_id", BigInteger, primary_key=True, autoincrement=True),
+    Column("event_id", BigInteger, nullable=False),
+    Column("rule_id", String(8), nullable=False),
+    Column("sku_id", String(24), nullable=True),
+    Column("shop_id", String(10), nullable=True),
+    Column("date_local", Date, nullable=True),
+    Column("model", String(64), nullable=False),
+    Column("summary", String(1024), nullable=False),
+    Column("likely_causes", JSON, nullable=False),
+    Column("recommended_actions", JSON, nullable=False),
+    Column("cited_metrics", JSON, nullable=False),
+    Column("need_human_review", Boolean, nullable=False, default=True),
+    Column("status", String(16), nullable=False, default="llm"),
+    Column("tokens_in", Integer, nullable=True),
+    Column("tokens_out", Integer, nullable=True),
+    Column("latency_ms", Integer, nullable=True),
+    Column("created_at", DateTime, nullable=False, server_default=func.now()),
+    Index("ix_diagnosis_event", "event_id"),
+)
+
+review_feedback = Table(
+    "review_feedback",
+    metadata,
+    Column("feedback_id", BigInteger, primary_key=True, autoincrement=True),
+    Column("diagnosis_id", BigInteger, nullable=False),
+    Column("decision", String(16), nullable=False),
+    Column("note", String(512), nullable=True),
+    Column("reviewer", String(64), nullable=True),
+    Column("created_at", DateTime, nullable=False, server_default=func.now()),
+    Index("ix_review_diagnosis", "diagnosis_id"),
+)
+
 # ------------------------------------------------------------------ control
 ingest_run = Table(
     "ingest_run",

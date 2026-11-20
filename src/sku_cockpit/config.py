@@ -34,8 +34,14 @@ class Settings(BaseSettings):
     # llm
     llm_provider: str = "mock"
     llm_model: str | None = None
+    llm_api_base: str | None = None
     llm_max_retries: int = 2
     llm_timeout_seconds: int = 60
+    llm_max_tokens: int = 1200
+    # reasoning models burn the whole budget on thinking and return no content;
+    # this task needs no long chain-of-thought (all numbers are pre-computed)
+    llm_disable_thinking: bool = True
+    deepseek_api_key: str | None = None
 
     # paths
     data_dir: Path = ROOT / "data"

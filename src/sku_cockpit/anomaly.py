@@ -248,17 +248,20 @@ def r3_ad_spike(daily: pd.DataFrame, cfg: dict[str, Any]) -> list[Event]:
     # one event per contiguous run of flagged days, so a spike that starts later
     # still carries its own date instead of being collapsed onto the first
     # (unrelated) spike of the period
-    return _streak_events(
-        s,
-        mask,
-        int(c.get("min_days", 2)),
-        "R3",
-        c["severity"],
-        lambda grp: {
-            "spend_7d": _j(spend7.reindex(grp.index).max()),
-            "baseline_7d": _j(base7.reindex(grp.index).max()),
-        },
-    )
+    s = s.assign(_spend7=spend7, _base7=base7)
+
+    def _evidence(grp: pd.DataFrame) -> dict[str, Any]:
+        # report one row, not the max of each column: mixing rows produced
+        # evidence that contradicted the rule (spend below baseline yet "spike")
+        ratio = grp["_spend7"] / grp["_base7"].replace(0, np.nan)
+        row = grp.loc[ratio.idxmax()] if ratio.notna().any() else grp.iloc[0]
+        return {
+            "spend_7d": _j(row["_spend7"]),
+            "baseline_7d": _j(row["_base7"]),
+            "ratio": _j(row["_spend7"] / row["_base7"]) if row["_base7"] else None,
+        }
+
+    return _streak_events(s, mask, int(c.get("min_days", 2)), "R3", c["severity"], _evidence)
 
 
 def r4_sales_cliff(daily: pd.DataFrame, cfg: dict[str, Any]) -> list[Event]:
@@ -481,8 +484,13 @@ def evaluate(events: pd.DataFrame, labels: pd.DataFrame) -> pd.DataFrame:
 
 
 def store_events(engine: Engine, events: pd.DataFrame) -> int:
+    """Rewrite the event table with stable ids (TRUNCATE resets AUTO_INCREMENT).
+
+    Stable ids matter: diagnoses reference event_id, so a re-run of detection
+    must not orphan them.
+    """
     with engine.begin() as conn:
-        conn.execute(text("DELETE FROM anomaly_event"))
+        conn.execute(text("TRUNCATE TABLE anomaly_event"))
     if events.empty:
         return 0
     records = []

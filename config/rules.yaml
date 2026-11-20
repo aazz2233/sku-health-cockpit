@@ -47,7 +47,7 @@ variant_price:
   severity: P2
 
 duplicate_listing:
-  similarity: 0.90    # 标题相似度阈值
+  similarity: 0.98    # 标题相似度阈值：同系列商品 0.95~0.96，真重复 0.98+
   severity: P1
 
 data_quality:

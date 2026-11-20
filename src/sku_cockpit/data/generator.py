@@ -151,7 +151,10 @@ class Generator:
             brand = BRANDS[i % len(BRANDS)]
             product = PRODUCTS[cat.code][i % len(PRODUCTS[cat.code])]
             color = COLORS[i % len(COLORS)]
-            title = f"{brand} {product} - {color}"
+            # model code keeps titles unique: without it, 6 categories x 4
+            # products x 6 colours produced many identical titles, which made
+            # the duplicate-listing rule flag half the catalogue
+            title = f"{brand} {product} - {color} M{i + 1:03d}"
             price_usd = float(cat.price_mid_usd * math.exp(rng.normal(0.0, 0.25)))
             price_usd = round(max(4.99, price_usd), 2)
             cost_cny = round(

@@ -107,6 +107,25 @@ def _detect(_: argparse.Namespace) -> None:
     print(f"[detect] report: {out}")
 
 
+def _diagnose(args: argparse.Namespace) -> None:
+    import json
+
+    from sku_cockpit.diagnosis import run as diagnose_run
+    from sku_cockpit.diagnosis import write_report
+
+    settings = get_settings()
+    engine = get_engine(settings)
+    init_schema(engine)
+    started = time.perf_counter()
+    results, stats = diagnose_run(engine, settings, limit=args.limit)
+    elapsed = time.perf_counter() - started
+    print(json.dumps(stats.summary(), indent=2, ensure_ascii=False))
+    print(f"[diagnose] {len(results)} cards in {elapsed:.1f}s")
+    out = Path(settings.reports_dir) / "diagnosis_eval.md"
+    write_report(results, stats, out)
+    print(f"[diagnose] report: {out}")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="sku_cockpit", description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -131,6 +150,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     det = sub.add_parser("detect", help="run anomaly rules and evaluate against labels")
     det.set_defaults(func=_detect)
+
+    dia = sub.add_parser("diagnose", help="AI-diagnose top anomaly events")
+    dia.add_argument("--limit", type=int, default=200, help="how many events to diagnose")
+    dia.set_defaults(func=_diagnose)
 
     return parser
 
