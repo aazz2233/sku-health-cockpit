@@ -293,7 +293,7 @@ class Generator:
             n_batches = int(self.rng.integers(2, 5))
             for b in range(n_batches):
                 arrived = self.start + timedelta(days=int(self.rng.integers(-20, self.days)))
-                qty = int(self.rng.integers(60, 400))
+                qty = int(self.rng.integers(20, 80))
                 # inbound freight: 0.5-1.6 USD per unit (3-11 CNY), a realistic
                 # share of a 20-60 USD product instead of a 25% margin killer
                 rows.append(
@@ -465,7 +465,7 @@ class Generator:
                 base_lambda = self.logistics[sku]["lambda"]
                 tacos = self.logistics[sku]["tacos"]
                 ad_prob = self.logistics[sku]["ad_prob"]
-                stock = 400.0
+                stock = 120.0
                 for day_idx, d in enumerate(self.dates):
                     weekday = 1.25 if d.weekday() >= 5 else 1.0
                     promo = 2.2 if day_idx in self.promo_day else 1.0

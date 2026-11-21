@@ -15,6 +15,18 @@
 - AI 只回答"为什么可能异常、接下来做什么"，且必须引用已算好的指标
 - 每个结论都带证据（指标 + 窗口 + 数值），可追溯到原始行
 
+## 界面
+
+一条命令拉起：`. .\scripts\up.ps1`（缺数据会自动生成），或 `uv run streamlit run src/sku_cockpit/app/dashboard.py`
+
+| 总览 | SKU 健康 |
+| --- | --- |
+| ![总览](docs/images/01-overview.png) | ![SKU 健康](docs/images/02-health.png) |
+
+| SKU 下钻 | 人审队列 |
+| --- | --- |
+| ![SKU 下钻](docs/images/03-drilldown.png) | ![人审队列](docs/images/04-review.png) |
+
 ## 当前进度
 
 | 阶段 | 内容 | 状态 |
@@ -24,7 +36,7 @@
 | P2 | 指标层（利润、库存、KPI） | ✅ |
 | P3 | 异常识别（10 条规则 + 评估） | ✅ |
 | P4 | AI 归因 + 人审闭环 | ✅ |
-| P4 | AI 归因 + 人审闭环 | ⏳ |
+| P5 | 看板 / 日报 / 交付脚本 | ✅ |
 
 ## 已跑出来的数据
 
@@ -47,11 +59,11 @@
 
 | 规则 | 召回率 | 说明 |
 | --- | ---: | --- |
-| 销量断崖 / 广告失控 / 退款异常 / 超储 / 变体价差 | 100% | |
-| 断货风险 | 89% | 2 个在窗口末尾才开始 |
-| 持续负毛利 | 73% | 4 个未达阈值 |
+| 销量断崖 / 广告失控 / 退款异常 / 超储 / 变体价差 / 断货风险 | 100% | |
+| 持续负毛利 | 67% | 5 个未同时满足"低于 −4%"和"劣化 5pp" |
 
-检测 5 秒 / 54,000 SKU-日。详细规则、阈值推导和"为什么精确率不能直接引用"，见 [docs/rules.md](docs/rules.md)。
+检测 6 秒 / 54,000 SKU-日。事件按区间存储，评估按区间重叠匹配。
+详细规则、阈值推导和"为什么精确率不能直接引用"，见 [docs/rules.md](docs/rules.md)。
 
 ## AI 归因（P4）
 
@@ -61,8 +73,8 @@
 | --- | ---: |
 | 成功率 | 200 / 200（0 降级） |
 | 引用校验失败 | 0 |
-| 平均延迟 | 3.18 秒/条 |
-| 总 token | 26 万输入 / 11 万输出 |
+| 平均延迟 | 2.72 秒/条 |
+| 总 token | 27 万输入 / 11 万输出 |
 
 三道防线：指标白名单（模型看不到原始数据）→ 引用校验（编数字会被抓出来）→ 降级模板（宁可朴素也不给错的）。
 设计与踩坑记录见 [docs/diagnosis.md](docs/diagnosis.md)。
@@ -70,31 +82,37 @@
 ## 快速开始
 
 ```powershell
-# 1. 环境（首次）
+# 一条命令：检查环境 → 按需生成数据 → 入库 → 指标 → 异常检测 → 日报 → 开看板
+. .\scripts\up.ps1
+
+# 或分步来
 uv sync
-
-# 2. 生成演示数据（3 店 × 200 SKU × 90 天，约 6 秒）
-uv run python -m sku_cockpit generate
-
-# 3. 建表 + 入库 + 质量报告（约 35 秒）
-uv run python -m sku_cockpit ingest --drop --report
-
-# 4. 看报告
-cat reports/data_quality.md
+uv run python -m sku_cockpit generate                 # 3 店 × 200 SKU × 90 天，约 6 秒
+uv run python -m sku_cockpit ingest --drop --report   # 建表 + 入库 + 质量报告，约 21 秒
+uv run python -m sku_cockpit metrics                  # 指标层，约 31 秒
+uv run python -m sku_cockpit detect                   # 异常检测 + 评估，约 6 秒
+uv run python -m sku_cockpit diagnose --limit 200     # AI 归因（需要 .env 里的 key）
+uv run python -m sku_cockpit report-daily             # 日报 Markdown + Excel
+uv run streamlit run src/sku_cockpit/app/dashboard.py # 看板
 ```
 
-没有 MySQL 也能验证数据层：`uv run pytest` 里除 `integration` 标记外的用例都不依赖数据库。
+没有 MySQL 也能验证数据和规则：`uv run pytest` 里除 `integration` 标记外的用例都不依赖数据库。
 
-数据库连接串放在 `.env`（`.env.example` 有模板），默认账号只对 `sku_cockpit` 库有权限。
+数据库连接串放在 `.env`（`.env.example` 有模板），应用账号只对 `sku_cockpit` 库有权限。
 
 ## 目录
 
 ```
 src/sku_cockpit/
-├─ cli.py            generate / ingest / report 三个入口
+├─ cli.py            generate / ingest / metrics / detect / diagnose / report-daily
 ├─ config.py         环境配置（pydantic-settings）
-├─ schema.py         SQLAlchemy 表定义（维度 / 事实 / 控制 / 暂存）
+├─ schema.py         SQLAlchemy 表定义（维度 / 事实 / 暂存 / 控制 / 诊断）
 ├─ db.py             engine 与建表
+├─ metrics.py        SQL 模板执行器（Jinja + 顺序执行 + 全量重算）
+├─ anomaly.py        10 条异常规则 + 区间评估
+├─ diagnosis.py      AI 归因：指标白名单 / 引用校验 / 降级
+├─ report.py         日报（Markdown + Excel）
+├─ app/dashboard.py  Streamlit 看板（4 页）
 └─ data/
    ├─ constants.py   店铺、类目、促销日历等业务常量
    ├─ generator.py   带 seed 的模拟数据生成器（含异常与脏数据埋点）
@@ -102,9 +120,12 @@ src/sku_cockpit/
    ├─ validation.py  三档校验：结构 / 业务 / 统计
    ├─ ingest.py      raw → 校验 → staging，幂等
    └─ quality.py     质量报告与脏数据召回对照
+sql/                 指标层 SQL（视图 + 三张 mart 表）
 config/mapping/      每家店铺一份表头映射
-tests/               生成器、校验、映射 + MySQL 集成测试
-docs/                环境说明、数据层设计
+config/rules.yaml    异常规则阈值
+scripts/             up.ps1 一键启动、screenshots.py 截图
+tests/               单元 + MySQL 集成测试
+docs/                设计文档与看板截图
 ```
 
 ## 设计要点
@@ -132,6 +153,7 @@ docs/                环境说明、数据层设计
 - [指标口径](docs/metrics.md)
 - [异常规则与评估](docs/rules.md)
 - [AI 归因层](docs/diagnosis.md)
+- [看板与日报](docs/dashboard.md)
 
 ## License
 

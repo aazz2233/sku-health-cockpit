@@ -129,6 +129,10 @@ def _streak_events(
                 while j < len(m) and m[j]:
                     j += 1
                 if j - i >= min_days:
+                    payload = dict(evidence_fn(g.iloc[i:j]))
+                    # an event is a *period*, not a point: recording the end lets
+                    # evaluation match by overlap instead of by start date alone
+                    payload["_date_end"] = g.iloc[j - 1]["date_local"].isoformat()
                     events.append(
                         {
                             "rule_id": rule_id,
@@ -136,7 +140,7 @@ def _streak_events(
                             "shop_id": shop,
                             "date_local": g.iloc[i]["date_local"],
                             "severity": severity,
-                            "evidence": evidence_fn(g.iloc[i:j]),
+                            "evidence": payload,
                         }
                     )
                 i = j
@@ -451,22 +455,37 @@ def detect(
 
 
 def evaluate(events: pd.DataFrame, labels: pd.DataFrame) -> pd.DataFrame:
-    """Per-rule recall and precision against injected labels."""
+    """Per-rule recall and precision against injected labels.
+
+    Events are periods, so a hit means "event interval overlaps label interval".
+    Matching only the start date under-counts long-running events whose run began
+    before the label window.
+    """
     rows: list[dict[str, Any]] = []
+    if not events.empty:
+        events = events.copy()
+        events["ev_end"] = events["evidence"].apply(
+            lambda e: e.get("_date_end") if isinstance(e, dict) else None
+        )
+        events["ev_end"] = pd.to_datetime(events["ev_end"], errors="coerce").dt.date
+        events["ev_end"] = events["ev_end"].where(events["ev_end"].notna(), events["date_local"])
+
     for atype, rule in TYPE_TO_RULE.items():
         sub_labels = labels[labels["anomaly_type"] == atype]
-        ev = events[events["rule_id"] == rule]
+        ev = events[events["rule_id"] == rule] if not events.empty else events
         total = len(sub_labels)
         recalled = 0
         for _, lab in sub_labels.iterrows():
+            if ev.empty:
+                continue
             hit = ev[(ev["sku_id"] == lab["sku_id"]) & (ev["shop_id"] == lab["shop_id"])]
-            # catalog-level rules (R8/R9) have no date; date rules must fall in window
-            hit = hit[
-                hit["date_local"].isna()
-                | ((hit["date_local"] >= lab["date_from"]) & (hit["date_local"] <= lab["date_to"]))
-            ]
-            recalled += int(len(hit) > 0)
-        pred_pairs = set(zip(ev["sku_id"], ev["shop_id"], strict=False))
+            if hit.empty:
+                continue
+            has_no_date = bool(hit["date_local"].isna().any())
+            overlap = (hit["date_local"] <= lab["date_to"]) & (hit["ev_end"] >= lab["date_from"])
+            if has_no_date or bool(overlap.any()):
+                recalled += 1
+        pred_pairs = set(zip(ev["sku_id"], ev["shop_id"], strict=False)) if not ev.empty else set()
         label_pairs = set(zip(sub_labels["sku_id"], sub_labels["shop_id"], strict=False))
         precision = len(pred_pairs & label_pairs) / len(pred_pairs) if pred_pairs else None
         recall = recalled / total if total else None

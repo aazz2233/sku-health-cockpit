@@ -126,6 +126,19 @@ def _diagnose(args: argparse.Namespace) -> None:
     print(f"[diagnose] report: {out}")
 
 
+def _daily_report(args: argparse.Namespace) -> None:
+    from datetime import date as _date
+
+    from sku_cockpit.report import write as write_daily
+
+    settings = get_settings()
+    engine = get_engine(settings)
+    on_date = _date.fromisoformat(args.date) if args.date else None
+    md_path, xlsx_path = write_daily(engine, settings, on_date)
+    print(f"[report] markdown: {md_path}")
+    print(f"[report] excel:    {xlsx_path}")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="sku_cockpit", description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -154,6 +167,10 @@ def build_parser() -> argparse.ArgumentParser:
     dia = sub.add_parser("diagnose", help="AI-diagnose top anomaly events")
     dia.add_argument("--limit", type=int, default=200, help="how many events to diagnose")
     dia.set_defaults(func=_diagnose)
+
+    rep = sub.add_parser("report-daily", help="write the daily markdown + excel report")
+    rep.add_argument("--date", type=str, default=None, help="YYYY-MM-DD, default: latest day")
+    rep.set_defaults(func=_daily_report)
 
     return parser
 
