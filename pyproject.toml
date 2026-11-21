@@ -5,6 +5,13 @@ description = "Multi-store SKU profit, inventory health and anomaly diagnosis co
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
+authors = [{ name = "ljj", email = "luojiajie@whut.edu.cn" }]
+keywords = ["ecommerce", "amazon", "data-engineering", "anomaly-detection", "llm"]
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
 
 dependencies = [
     # data
@@ -47,6 +54,10 @@ dev = [
     "types-pyyaml",
     "pre-commit>=3.7",
 ]
+
+[project.urls]
+Repository = "https://github.com/aazz2233/sku-health-cockpit"
+Issues = "https://github.com/aazz2233/sku-health-cockpit/issues"
 
 [tool.ruff]
 line-length = 100

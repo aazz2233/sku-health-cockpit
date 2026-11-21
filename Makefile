@@ -12,6 +12,9 @@ export PYTHONPATH := src
 
 help:  ## 显示可用命令
 	@echo "make sync     安装/更新依赖（需联网，国内建议先设 UV_DEFAULT_INDEX）"
+	@echo "make up       一键：生成数据(按需) → 入库 → 指标 → 检测 → 日报（Windows 用 scripts/up.ps1）"
+	@echo "make dashboard 启动看板 http://localhost:8501"
+	@echo "make report   生成日报（Markdown + Excel）"
 	@echo "make fmt      格式化（ruff format）"
 	@echo "make lint     静态检查（ruff check）"
 	@echo "make type     类型检查（mypy）"
@@ -21,6 +24,19 @@ help:  ## 显示可用命令
 
 sync:
 	$(UV) sync
+
+up:
+	$(UV) run python -m sku_cockpit generate
+	$(UV) run python -m sku_cockpit ingest --drop --report
+	$(UV) run python -m sku_cockpit metrics
+	$(UV) run python -m sku_cockpit detect
+	$(UV) run python -m sku_cockpit report-daily
+
+dashboard:
+	$(UV) run streamlit run src/sku_cockpit/app/dashboard.py
+
+report:
+	$(UV) run python -m sku_cockpit report-daily
 
 fmt:
 	$(UV) run ruff format src tests

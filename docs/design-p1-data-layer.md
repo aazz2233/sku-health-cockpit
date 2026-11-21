@@ -296,9 +296,9 @@ BIZ_BALANCE / BIZ_FK_MISSING / BIZ_TIME_ORDER / BIZ_CURRENCY / BIZ_QTY_EXCEED / 
 实测结果：
 
 ```
-orders       82,651      refunds      4,725
-ads          28,239      inventory   54,000
-settlement  165,330      raw_row     87,392
+orders       82,134      refunds      4,660
+ads          28,267      inventory   54,000
+settlement  164,296      raw_row     86,810
 reject_row       16      anomaly_label  81
 
 脏数据召回：US01 6/6、DE01 5/5、UK01 4/4（含原因码匹配）
