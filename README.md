@@ -97,6 +97,12 @@
 # 一条命令：检查环境 → 按需生成数据 → 入库 → 指标 → 异常检测 → 日报 → 开看板
 . .\scripts\up.ps1
 
+# Windows 若提示"禁止运行脚本"（默认执行策略），用 .cmd 包装，双击也行
+.\scripts\up.cmd
+
+# 只开看板（数据已在库里时）
+.\scripts\dashboard.cmd
+
 # 或分步来
 uv sync
 uv run python -m sku_cockpit generate                 # 3 店 × 200 SKU × 90 天，约 6 秒

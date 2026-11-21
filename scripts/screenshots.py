@@ -43,7 +43,12 @@ def main() -> int:
                 page.wait_for_selector(f"text={marker}", timeout=90_000)
             except Exception as exc:  # noqa: BLE001
                 print(f"[warn] marker not found on {slug}: {exc}")
-            page.wait_for_timeout(3000)
+            # charts render asynchronously; wait for the plotly canvas to exist
+            try:
+                page.wait_for_selector(".js-plotly-plot", timeout=30_000)
+            except Exception:  # noqa: BLE001
+                pass
+            page.wait_for_timeout(5000)
             target = OUT / filename
             page.screenshot(path=str(target), full_page=True)
             print(f"[ok] {slug} -> {target} ({target.stat().st_size // 1024} KB)")

@@ -22,8 +22,11 @@ param(
 $ErrorActionPreference = 'Stop'
 $env:PYTHONIOENCODING = 'utf-8'
 $env:PYTHONUTF8 = '1'
-$env:PYTHONPATH = Join-Path (Split-Path -Parent $PSScriptRoot) 'src'
 $root = Split-Path -Parent $PSScriptRoot
+$env:PYTHONPATH = Join-Path $root 'src'
+# keep uv's cache inside the project: works even when the user profile is not writable
+if (-not $env:UV_CACHE_DIR) { $env:UV_CACHE_DIR = Join-Path $root '.cache\uv' }
+if (-not $env:UV_PYTHON_INSTALL_DIR) { $env:UV_PYTHON_INSTALL_DIR = Join-Path $root '.cache\python' }
 Set-Location $root
 
 function Step([string]$text) { Write-Host "`n== $text" -ForegroundColor Cyan }

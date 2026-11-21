@@ -141,7 +141,7 @@ def page_overview() -> None:
         trend, x="date_local", y=["净收入", "净利"], labels={"value": "CNY", "date_local": ""}
     )
     fig.update_layout(height=320, legend_title_text="", margin={"l": 0, "r": 0, "t": 10, "b": 0})
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     left, right = st.columns([1, 1])
     with left:
@@ -151,7 +151,7 @@ def page_overview() -> None:
             px.bar(by_rule, x="rule_id", y="事件数", text="事件数").update_layout(
                 height=300, margin={"l": 0, "r": 0, "t": 10, "b": 0}
             ),
-            use_container_width=True,
+            width="stretch",
         )
     with right:
         st.subheader("店铺表现（近 30 天）")
@@ -171,7 +171,7 @@ def page_overview() -> None:
                     "net_margin": "净利率",
                 }
             ),
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
             column_config={
                 "净利率": st.column_config.NumberColumn(format="%.1f%%"),
@@ -253,7 +253,7 @@ def page_health() -> None:
                 "margin_30d": "30天净利率",
             }
         ),
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         height=560,
         column_config={
@@ -293,7 +293,7 @@ def page_drilldown() -> None:
         chart, x="date_local", y=["净收入", "净利"], labels={"value": "CNY", "date_local": ""}
     )
     fig.update_layout(height=300, legend_title_text="", margin={"l": 0, "r": 0, "t": 10, "b": 0})
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     left, right = st.columns(2)
     with left:
@@ -315,13 +315,13 @@ def page_drilldown() -> None:
             px.pie(cost, names="科目", values="金额", hole=0.45).update_layout(
                 height=300, margin={"l": 0, "r": 0, "t": 10, "b": 0}
             ),
-            use_container_width=True,
+            width="stretch",
         )
     with right:
         st.subheader("可售库存（近 30 天）")
         stock = px.line(last30, x="date_local", y="available_qty", labels={"date_local": ""})
         stock.update_layout(height=300, margin={"l": 0, "r": 0, "t": 10, "b": 0})
-        st.plotly_chart(stock, use_container_width=True)
+        st.plotly_chart(stock, width="stretch")
 
     st.subheader("该 SKU 的异常与诊断")
     mine = diag[(diag["sku_id"] == sku) & (diag["shop_id"] == shop)]
